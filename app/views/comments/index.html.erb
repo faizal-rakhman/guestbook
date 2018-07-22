@@ -1,0 +1,37 @@
+<h1>Guestbook</h1>
+
+<table border="1">
+  <tr>
+    <th>ID</th>
+    <th>Name</th>
+    <th>Comment</th>
+    <th>Delete</th>
+  </tr>
+
+
+  <%= @comment_list.each do |comment| %>
+  <tr>
+    <td><%= comment.id %></td>
+    <td><%= comment.name %></td>
+    <td><%= comment.comment %></td>
+    <td>
+    <form id="delete_comment" method="post" action="comments/delete">
+      <input name="authenticity_token" type="hidden" value="<%= form_authenticity_token %>" />
+      <input type="hidden" name="id" type="text" value="<%= comment.id %>"/><br>
+      <input type="submit" class="btn btn-primary" style="width: 90px" value="delete" />
+    </form>
+    </td>
+  </tr>
+
+  <% end %>
+
+</table>
+
+<hr>
+
+<form id="add_comment" method="post" action="comments/add">
+  <input name="authenticity_token" type="hidden" value="<%= form_authenticity_token %>" />
+  name:<input name="name" type="text" /><br>
+  comment:<input name="comment" type="text" /><br>
+  <input type="submit" class="btn btn-primary" style="width: 90px" value="submit" />
+</form>
