@@ -1,0 +1,57 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/ruby:2.4.1-node-browsers
+        environment:
+          PGHOST: localhost
+          PGUSER: postgres
+          RAILS_ENV: test
+      - image: postgres:9.5
+        environment:
+          POSTGRES_USER: postgres
+          POSTGRES_DB: your-app-name_test
+          POSTGRES_PASSWORD: ""
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+          - v1-dependencies-{{ checksum "Gemfile.lock" }}
+          - v1-dependencies-
+      - run:
+          name: install dependencies
+          command: |
+            bundle install --jobs=4 --retry=3 --path vendor/bundle
+      - save_cache:
+          paths:
+            - ./vendor/bundle
+          key: v1-dependencies-{{ checksum "Gemfile.lock" }}
+      - run:
+          name: setup Db
+          command: |
+            bundle exec rake db:create
+            bundle exec rake db:schema:load
+            bundle exec rake db:migrate
+      - run:
+          name: run tests
+          command: |
+            mkdir /tmp/test-results
+            TEST_FILES="$(circleci tests glob "spec/**/*_spec.rb" | circleci tests split --split-by=timings)"
+            bundle exec rspec
+      - store_test_results:
+          path: /tmp/test-results
+      - store_artifacts:
+          path: /tmp/test-results
+          destination: test-results
+  deploy_staging:
+    machine:
+      enabled: true
+    environment:
+      HEROKU_APP: "guestbookstaging"
+    steps:
+      - checkout
+      - run:
+          name: Deploy Master to Heroku Staging
+          command: |
+            git push https://heroku:cd6f4a13-7c29-409f-9761-a4c12219e7c6@git.heroku.com/guestbookstaging.git master
